@@ -1,0 +1,19 @@
+{
+  "name": "nwjs-angular",
+  "version": "1.0.0",
+  "description": "Aplicação exemplo com AngularJS, NwJS, SQLite e Bootstrap",
+  "main": "index.html",
+  "author": "Clube dos Geeks",
+  "window": {
+    "toolbar": false,
+    "width": 1000,
+    "height": 630
+  },
+  "license": "MIT",
+  "dependencies": {
+    "angular": "^1.5.1",
+    "angular-route": "^1.5.1",
+    "sqlite-sync": "^0.2.0",
+    "angular-utils-pagination":"^0.11.0"
+  }
+}

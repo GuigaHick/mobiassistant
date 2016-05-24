@@ -1,0 +1,60 @@
+<html ng-app="cdg">
+<head>
+	<title>MOBI ASSISTANT 2016.1</title>
+	<link rel="stylesheet" type="text/css" href="bootstrap/css/bootstrap.css">
+
+	<!-- jQuery -->
+	<script src="http://code.jquery.com/jquery-1.12.0.min.js"></script>
+
+	<!-- Bootstrap -->
+	<script src="bootstrap/js/bootstrap.js"></script>
+
+	<!-- Angular -->
+	<script src="node_modules/angular/angular.js"></script>
+	<!-- Angular - Pagination -->
+	<script src="node_modules/angular-utils-pagination/dirPagination.js"></script>
+
+	<!-- App -->
+	<script src="app.js"></script>
+
+	<!-- Controllers -->
+	<script src="controllers/busController.js"></script>
+
+	<!-- Services -->
+	<script src="services/dbService.js"></script>
+</head>
+<body>
+	<!-- Menu -->
+	<nav class="navbar navbar-default">
+		<div class="container-fluid">
+			<div class="navbar-header">
+				<a class="navbar-brand" href="#/">
+					MOBI ASSISTANT
+				</a>
+			</div>
+			<div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+      			<ul class="nav navbar-nav">
+      				<li>
+      					<a href="#/pessoas">Linhas de &ocirc;nibus</a>
+      				</li>
+      			</ul>
+      		</div>
+		</div>
+	</nav>
+	<!-- Onde será carregada a view -->
+	<div ng-view="" class="container"></div>
+	<!-- Rodapé -->
+	<nav class="navbar navbar-default navbar-fixed-bottom">
+	  	<div class="container">
+	  		<ul class="nav navbar-nav">
+	  			<li>
+	  				<a >Grande Recife 2016</a>
+	  			</li>
+	  			<li>
+	  				<a >Equipe 3</a>
+	  			</li>
+	  		</ul>
+	   	</div>
+	</nav>
+</body>
+</html>
