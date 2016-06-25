@@ -13,8 +13,9 @@ class MultiColumnListbox(object):
         #criar banco
         self.conectar = sqlite3.connect("database_mobiassistant.db")
         self.cur = self.conectar.cursor()
-        lista = self.cur.execute("SELECT * FROM onibus")
-        for i in lista:
+        self.cur.execute("SELECT * FROM onibus")
+        self.lista = self.cur.fetchall()
+        for i in self.lista:
             it = (i[0] ,i[1],i[2])
             car_list.append(it)
         self.tree = None
@@ -35,6 +36,8 @@ class MultiColumnListbox(object):
         btnrua.pack(pady=10,padx = 10)
         self.txtrua = ttk.Entry(topFrame,textvariable = self.rua,width=35)
         self.txtrua.pack()
+        btnrua = ttk.Button(topFrame,text="Exibir Todos",command=self.show_all)
+        btnrua.pack(pady=10,padx = 10)
 
         s = """Linhas de ônibus da Parada 87
         """
@@ -84,36 +87,86 @@ class MultiColumnListbox(object):
 
     def searchbystop(self):
         stop_number = self.txtparada.get()
-        print("procurou por parada" + stop_number)
+        self.cur.execute("select o.numero_onibus,o.nome,o.empresa from onibus o ,passar p where p.numer_parada = " + stop_number + " and p.numero_onibus = o.numero_onibus")
+        lista = self.cur.fetchall()
 
-        lista = self.cur.execute("select o.numero_onibus,o.nome,o.empresa from onibus o ,passar p where p.numer_parada = " + stop_number + " and p.numero_onibus = o.numero_onibus")
-        buscount = 0
-        for i in lista:
-            it = (i[0] ,i[1],i[2])
-            print(str(i[0]) + str(i[1]) + str(i[2]))
-            buscount = buscount + 1
-        if buscount == 0:
-            tkinter.messagebox.showinfo("info","Não há ônibus para a parada Requerida" + str(buscount))
-        else:
+        buscount = len(lista)
+        
+        if buscount > 0:
+            ct = len(car_list)
+            print(str(ct))
+            while ct > 0:
+                car_list.remove(car_list[ct-1])
+                ct = ct -1
+
+            #populate the data into bus list
+            for ib in lista:
+                it = (ib[0] ,ib[1], ib[2])
+                car_list.append(it)
+            
+            #call the function to reload the bus list data
+            self.reload_results()
             tkinter.messagebox.showinfo("info","As linhas que passam na parada estão listadas abaixo" + str(buscount))
+        else:
+            tkinter.messagebox.showinfo("info","Não há ônibus para a parada Requerida" + str(buscount))
 
-        self.parada.set("")
+        self.parada.set("") #erase the input text
 
     def searchbystreet(self):
         street = self.txtrua.get()
-        lista = self.cur.execute("SELECT  O.numero_onibus , O.nome,O.empresa FROM onibus O, parada P, passar Q WHERE Q.numero_onibus = O.numero_onibus AND P.numero_parada= Q.numer_parada AND P.rua LIKE '%"+street+"'")
-        buscount = 0
-        for i in lista:
-            it = (i[0] ,i[1],i[2])
-            print(str(i[0]) + str(i[1]) + str(i[2]))
-            buscount = buscount + 1
-        if buscount == 0:
-            tkinter.messagebox.showinfo("info","Não há ônibus para a parada Requerida" + str(buscount))
+        self.cur.execute("SELECT  O.numero_onibus , O.nome,O.empresa FROM onibus O, parada P, passar Q WHERE Q.numero_onibus = O.numero_onibus AND P.numero_parada= Q.numer_parada AND P.rua LIKE '%"+street+"'")
+        lista = self.cur.fetchall()
+        buscount = len(lista)
+
+        if buscount > 0:
+        #erasing current data, to show specif data to user
+            ct = len(car_list)
+            print(str(ct))
+            while ct > 0:
+                car_list.remove(car_list[ct-1])
+                ct = ct-1
+        #reload the bus list withe the specifcs bus
+            for i in lista:
+                it = (i[0] ,i[1],i[2])
+                car_list.append(it)
+            self.reload_results()
+            tkinter.messagebox.showinfo("info","As linhas que passam na parada estão listadas abaixo" +str(buscount))
         else:
-            tkinter.messagebox.showinfo("info","As linhas que passam na parada estão listadas abaixo")
-        
-        print("procurou por Rua" + street)
-        self.rua.set("")
+            tkinter.messagebox.showinfo("info","Não há ônibus para a parada Requerida" + str(buscount))
+
+        self.rua.set("") #erase the input text
+
+    def show_all (self):
+        ct = len(car_list)
+        print(str(ct))
+        while ct > 0:
+            car_list.remove(car_list[ct-1])
+            ct = ct-1
+
+        i = 0
+        while i < len(self.lista):
+            item = self.lista[i]
+            it = (item[0] ,item[1],item[2])
+            car_list.append(it)
+            print("atualizou")
+            i = i + 1
+        self.reload_results()
+
+    def reload_results(self):
+        #erasing all data
+        for row in self.tree.get_children():
+            self.tree.delete(row)
+            print("deletou a linha")
+        print("Dados Deletados")
+ 
+        for item in car_list:
+            self.tree.insert('', 'end', values=item)
+            # adjust column's width if necessary to fit each value
+            for ix, val in enumerate(item):
+                col_w = tkFont.Font().measure(val)
+                if self.tree.column(car_header[ix],width=None)<col_w:
+                    self.tree.column(car_header[ix], width=col_w)
+            print("Adicionou na árvore")
 
 def sortby(tree, col, descending):
     """sort tree contents when a column header is clicked on"""
