@@ -1,16 +1,32 @@
 #section to import libraryes
-
+import RPi.GPIO as GPIO
 import tkinter as tk
 import tkinter.font as tkFont
 import tkinter.ttk as ttk
 import sqlite3
 import tkinter.messagebox
+import pygame
+import serial
+import time
+import threading
 
-
-class MultiColumnListbox(object):
+class StopBusModule(object):
 
     def __init__(self):
-        #criar banco
+        #criar comunicação serial
+        self.ser = None
+        try:
+          self.ser = serial.Serial(
+              port = '/dev/ttyUSB0',
+              parity = serial.PARITY_NONE,
+              baudrate = 57600,
+              stopbits = serial.STOPBITS_ONE,
+              bytesize = serial.EIGHTBITS,
+              timeout = 1
+          )
+        except:
+            pass
+      #criar banco
         self.conectar = sqlite3.connect("database_mobiassistant.db")
         self.cur = self.conectar.cursor()
         self.cur.execute("SELECT * FROM onibus")
@@ -78,20 +94,68 @@ class MultiColumnListbox(object):
                 if self.tree.column(car_header[ix],width=None)<col_w:
                     self.tree.column(car_header[ix], width=col_w)
 
+    def notify_user(self):
+        for i in range(1,15):
+           time.sleep(1)
+        print(self.bus_code)
+        current_sound = sound_list[str(self.bus_code)]
+        print(current_sound)
+        pygame.mixer.init()
+        pygame.mixer.music.load(current_sound)
+        pygame.mixer.music.play()
+        while pygame.mixer.music.get_busy() == True:
+           continue
+
 #this function gonna communicate this application and bus module through nrf wireless 
     def select(self,event):
         item = self.tree.selection()[0]
-        codigo,nome,empresa = self.tree.item(item,"values") 
+        codigo,nome,empresa = self.tree.item(item,"values")
+        self.bus_code = codigo 
         tkinter.messagebox.showinfo("info","Você selecionou o ônibus : " + str(codigo) + str(nome) + str(empresa))
         #enviar para nrf o código da linha
-
+        if self.ser == None:
+            tkinter.messagebox.showinfo("info","O Sistema Não pode se Conectar ao ônibus")
+        else:
+            try:#chek if the connection is still working
+              print(str(codigo))
+              if codigo == "432":
+                   self.ser.write(bytes('1','UTF-8'))
+                   pass
+              if codigo == "202":
+                   self.ser.write(bytes('2','UTF-8'))
+                   pass
+              if codigo == "440":
+                   pass
+                   self.ser.write(bytes('3','UTF-8'))
+              if codigo == "040":
+                   pass
+                   self.ser.write(bytes('4','UTF-8'))
+              if codigo == "522":
+                   pass
+                   self.ser.write(bytes('5','UTF-8'))
+              if codigo == "424":
+                   pass
+                   self.ser.write(bytes('6','UTF-8'))
+              if codigo == "431":
+                   pass
+                   self.ser.write(bytes('7','UTF-8'))
+              if codigo == "2920":
+                   pass
+                   self.ser.write(bytes('8','UTF-8'))
+              self.threadnotify = threading.Thread(target=self.notify_user)
+              self.threadnotify.start()
+            except:
+                tkinter.messagebox.showinfo("info","Algum problema ocorreu com a conexão")
     def searchbystop(self):
+        buscount = 0
         stop_number = self.txtparada.get()
-        self.cur.execute("select o.numero_onibus,o.nome,o.empresa from onibus o ,passar p where p.numer_parada = " + stop_number + " and p.numero_onibus = o.numero_onibus")
-        lista = self.cur.fetchall()
+        if stop_number:
+          self.cur.execute("select o.numero_onibus,o.nome,o.empresa from onibus o ,passar p where p.numer_parada = " + stop_number + " and p.numero_onibus = o.numero_onibus")
+          lista = self.cur.fetchall()
+          buscount = len(lista)
+        else:
+         tkinter.messagebox.showinfo("info","O Campo Parada Está vazio")
 
-        buscount = len(lista)
-        
         if buscount > 0:
             ct = len(car_list)
             print(str(ct))
@@ -103,7 +167,7 @@ class MultiColumnListbox(object):
             for ib in lista:
                 it = (ib[0] ,ib[1], ib[2])
                 car_list.append(it)
-            
+
             #call the function to reload the bus list data
             self.reload_results()
             tkinter.messagebox.showinfo("info","As linhas que passam na parada estão listadas abaixo" + str(buscount))
@@ -113,10 +177,15 @@ class MultiColumnListbox(object):
         self.parada.set("") #erase the input text
 
     def searchbystreet(self):
+        buscount = 0
         street = self.txtrua.get()
-        self.cur.execute("SELECT  O.numero_onibus , O.nome,O.empresa FROM onibus O, parada P, passar Q WHERE Q.numero_onibus = O.numero_onibus AND P.numero_parada= Q.numer_parada AND P.rua LIKE '%"+street+"'")
-        lista = self.cur.fetchall()
-        buscount = len(lista)
+        if street:
+          print("String vazia")
+          self.cur.execute("SELECT  O.numero_onibus , O.nome,O.empresa FROM onibus O, parada P, passar Q WHERE Q.numero_onibus = O.numero_onibus AND P.numero_parada= Q.numer_parada AND P.rua LIKE '%"+street+"'")
+          lista = self.cur.fetchall()
+          buscount = len(lista)
+        else:
+            tkinter.messagebox.showinfo("info","O Campo Rua Está vazio")
 
         if buscount > 0:
         #erasing current data, to show specif data to user
@@ -186,13 +255,20 @@ def sortby(tree, col, descending):
 
 # the test data ...
 
+GPIO.setmode(GPIO.BCM)
+GPIO.setwarnings(False)
+GPIO.setup(18,GPIO.OUT)
 car_header = ['Cod', 'Nome','Empresa']
 
+sound_list = {"432":"cdu_varzea.mp3","202":"barro_macaxeira.mp3",
+              "431":"cidade_universitaria.mp3","2920":"rio_doce_cdu.mp3","40":
+              "cdu_boa_viagem_caxanga.mp3","522":"dois_irmãos_(rui_barbosa).mp3",
+              "424" : "cdu_boa_viagem","440":"cdu_boa_viagem_caxanga.mp3"}
 car_list = []
 
 if __name__ == '__main__':
     root = tk.Tk()
     root.title("Mobi Assistant")
     root.geometry("2048x1536");
-    listbox = MultiColumnListbox()
+    listbox = StopBusModule()
     root.mainloop()

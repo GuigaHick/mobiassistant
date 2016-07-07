@@ -1,5 +1,5 @@
 //Programa : Teste NRF24L01 - Emissor - Botoes
-//Autor : Adilson Thomsen
+//Autor : Anderson Felix,Guilherme Henrique,Jônatas costa
 
 #include <SPI.h>
 #include "nRF24L01.h"
@@ -29,7 +29,7 @@ void setup()
 
   //Inicializa a serial
   Serial.begin(57600);
-  Serial.println("Pressione botao 1 ou 2 para iniciar a comunicacao...");
+  //Serial.println("Pressione botao 1 ou 2 para iniciar a comunicacao...");
   
   //Inicializa a comunicacao
   radio.begin();
@@ -39,18 +39,37 @@ void setup()
 
 void loop()
 {
+  if(Serial.available())
+  {
+      int valor = Serial.read();
+      Serial.println(valor);
+      if(valor == 49)
+      {
+        dados[0] = 1;
+        radio.write(dados, 1);
+      }
+      
+      /*if(valor == 49)
+      {
+        dados[0] = 2;
+        radio.write(dados, 1);
+      }*/
+        
+      
+  }
   //Envia o numero 1 caso o botao1 seja pressionado
   if (digitalRead(pino_botao1) == LOW)
   {
-    Serial.println("Botao 1 pressionado !");
+    //Serial.println("Botao 1 pressionado !");
     dados[0] = 1;
     radio.write(dados, 1);
+    Serial.println("apertou");
   }
   
   //Envia o numero 2 caso o botao2 seja pressionado
   if (digitalRead(pino_botao2) == LOW)
   {
-    Serial.println("Botao 2 pressionado !");
+    //Serial.println("Botao 2 pressionado !");
     dados[0] = 2;
     radio.write(dados, 1);
   }
